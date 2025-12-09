@@ -34,11 +34,14 @@ function App() {
           </div>
           <button
             onClick={() => setDarkMode(!darkMode)}
-            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full font-bold hover:scale-105 transition-all duration-200 shadow-lg shadow-black/5"
+            className="w-10 h-10 flex items-center justify-center bg-gray-200 dark:bg-gray-700 rounded-full hover:scale-105 transition-all duration-200 shadow-md"
             aria-label="Toggle dark mode"
           >
-            {darkMode ? '☀️ Light' : '🌙 Dark'}
+            <span className="text-xl">
+              {darkMode ? '☀️' : '🌙'}
+            </span>
           </button>
+
         </header>
         <Builder />
       </div>

@@ -7,6 +7,7 @@ const templates = [
   { key: 'landing', title: 'Landing', desc: 'Hero, features', pages: 3 },
   { key: 'portfolio', title: 'Portfolio', desc: 'Home, about', pages: 4 },
   { key: 'ecommerce', title: 'E-Com', desc: 'Products', pages: 2 },
+  { key: 'blog', title: 'Blog', desc: 'Articles, posts', pages: 3 },
 ];
 
 function Builder() {
@@ -51,10 +52,9 @@ function Builder() {
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();  // Prevent newline
-      generateCode();  // Trigger generate
+      e.preventDefault();
+      generateCode();
     }
-    // Shift+Enter allows newline (default behavior)
   };
 
   const downloadZip = () => {
@@ -74,18 +74,18 @@ function Builder() {
   };
 
   return (
-    <div className="space-y-6 relative">
-      {/* Templates at the top - Refactored to uniform text buttons */}
+    <div className="space-y-4 relative">
+      {/* Templates at the top - Removed images, simple text buttons */}
       <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-lg shadow-black/5">
         <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Templates</h2>
         <hr className="border-gray-200 dark:border-gray-700 mb-6" />
-        <div className="flex flex-wrap gap-4 justify-center">
+        <div className="flex flex-wrap gap-2 justify-center">
           {templates.map((template) => (
             <button
               key={template.key}
               onClick={() => loadTemplate(template)}
-              title={template.desc}  // Tooltip showing description
-              className="w-32 h-16 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full font-bold hover:scale-105 transition-all duration-200 shadow-lg shadow-black/5 text-center"
+              title={template.desc}
+              className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded text-sm hover:bg-gray-300 dark:hover:bg-gray-600"
             >
               {template.title}
             </button>
@@ -100,7 +100,7 @@ function Builder() {
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          onKeyDown={handleKeyDown}  // Handle Enter and Shift+Enter
+          onKeyDown={handleKeyDown}
           placeholder="Describe your multi-page website..."
           className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 text-gray-900 dark:text-white mb-4"
           rows={3}
