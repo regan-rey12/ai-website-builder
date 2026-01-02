@@ -13,7 +13,8 @@ const models = [
   "google/gemma-3-12b-it:free",
   "kwaipilot/kat-coder-pro:free",
   "qwen/qwen3-coder",
-  "openai/gpt-5.2-pro"
+  "openai/gpt-5.2-pro",
+  "allenai/olmo-3.1-32b-think:free"
 
 ];
 
