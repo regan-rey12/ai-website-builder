@@ -42,6 +42,11 @@ const APP_ORIGIN = process.env.APP_ORIGIN || 'http://localhost:3000';
 const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
 const UNSPLASH_API_BASE = 'https://api.unsplash.com';
 
+// Only two models used
+const MODEL_MAIN = 'kwaipilot/kat-coder-pro:free';
+const MODEL_CODE = 'qwen/qwen3-coder';
+const BUSINESS_MODEL = process.env.BUSINESS_MODEL || MODEL_MAIN;
+
 if (!OPENROUTER_API_KEY) {
   console.error('Missing OPENROUTER_API_KEY in environment variables.');
   process.exit(1);
@@ -63,7 +68,6 @@ document.addEventListener('DOMContentLoaded', function () {
   const navLinks = document.querySelector('.nav-links');
   const header = document.querySelector('.site-header');
 
-  // Mobile nav toggle
   if (navToggle) {
     navToggle.addEventListener('click', function () {
       document.body.classList.toggle('nav-open');
@@ -72,20 +76,49 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // Header scrolled state
   if (header) {
     const handleScroll = () => {
-      if (window.scrollY > 50) {
-        header.classList.add('scrolled');
-      } else {
-        header.classList.remove('scrolled');
-      }
+      if (window.scrollY > 50) header.classList.add('scrolled');
+      else header.classList.remove('scrolled');
     };
     window.addEventListener('scroll', handleScroll);
     handleScroll();
   }
 
-  // Smooth scroll + preview navigation bridge
+  // --- Portfolio hero fix: make hero image a real background, not free image ---
+  (function fixPortfolioHero() {
+    if (!document.body.classList.contains('portfolio')) return;
+
+    const hero = document.querySelector('.hero');
+    if (!hero) return;
+
+    // 1) Prefer an image already inside the hero
+    let heroImg =
+      hero.querySelector('img.hero-image, img.hero-bg-image, img.section-image');
+
+    // 2) If none, look just before the hero for an image (common AI output)
+    if (!heroImg) {
+      const imgsBefore = [];
+      let node = hero.previousElementSibling;
+      while (node) {
+        if (node.tagName === 'IMG') imgsBefore.push(node);
+        node = node.previousElementSibling;
+      }
+      heroImg = imgsBefore[0] || null;
+    }
+
+    if (!heroImg) return;
+
+    // 3) Move it inside hero as first child if needed
+    if (!hero.contains(heroImg)) {
+      hero.insertBefore(heroImg, hero.firstChild);
+    }
+
+    // 4) Ensure it has the background image classes
+    heroImg.classList.add('hero-bg-image', 'hero-image');
+  })();
+  // --- end portfolio hero fix ---
+
   document.addEventListener('click', function (event) {
     // Smooth scroll for in-page anchors
     const hashLink = event.target.closest('a[href^="#"]');
@@ -218,11 +251,9 @@ body.nav-open .nav-toggle::after {
   .nav-toggle {
     display: none !important;
   }
-
   .site-header .site-nav {
     display: block !important;
   }
-
   .site-header .nav-links {
     display: flex !important;
   }
@@ -232,7 +263,6 @@ body.nav-open .nav-toggle::after {
   .nav-toggle {
     display: block;
   }
-
   .site-header .site-nav {
     display: none !important;
     position: absolute;
@@ -244,17 +274,14 @@ body.nav-open .nav-toggle::after {
     box-shadow: 0 12px 30px rgba(15, 23, 42, 0.15);
     z-index: 50;
   }
-
   body.nav-open .site-header .site-nav,
   .site-header .site-nav.active {
     display: block !important;
   }
-
   .site-header .nav-links {
     flex-direction: column;
     align-items: flex-start;
   }
-
   .site-header .nav-links li {
     margin-bottom: 0.5rem;
   }
@@ -394,8 +421,10 @@ body.portfolio .hero .container {
   gap: 1.25rem;
 }
 
-/* Make .hero-image behave like a background layer */
-body.portfolio .hero .hero-image {
+/* Make hero image behave like a background layer */
+body.portfolio .hero img.hero-image,
+body.portfolio .hero .hero-image,
+body.portfolio .hero img.hero-bg-image {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -403,6 +432,7 @@ body.portfolio .hero .hero-image {
   object-fit: cover;
   z-index: 0;
   opacity: 0.4;
+  display: block;
 }
 
 /* Optional: tighten hero buttons on dark background */
@@ -423,8 +453,11 @@ const BUSINESS_SITE_CSS = `
   --text-main: #0f172a;
   --text-soft: #6b7280;
   --border-subtle: #e5e7eb;
+  --radius: 10px;
+  --shadow-soft: 0 18px 45px rgba(15,23,42,0.35);
 }
 
+/* Reset */
 *,
 *::before,
 *::after {
@@ -441,6 +474,12 @@ body {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
 }
 
 /* Layout */
@@ -486,7 +525,7 @@ section {
   text-decoration: none;
 }
 
-/* Nav basics */
+/* Nav */
 .site-header .site-nav {
   display: block;
 }
@@ -512,14 +551,10 @@ section {
   font-size: 0.95rem;
 }
 
-.site-header .nav-links a:hover {
-  background-color: rgba(15, 23, 42, 0.5);
-}
-
-.site-header .nav-links a.active,
-.site-header .nav-links a[aria-current="page"] {
-  background-color: #22c55e;
-  color: #022c22;
+.site-header .nav-links a:hover,
+.site-header .nav-links a.active {
+  background-color: rgba(15,23,42,0.6);
+  color: #f9fafb;
 }
 
 /* Hamburger */
@@ -553,15 +588,6 @@ section {
 
 .nav-toggle::after {
   top: 1.6rem;
-}
-
-body.nav-open .nav-toggle::before {
-  transform: translateY(0.4rem) rotate(45deg);
-  box-shadow: none;
-}
-
-body.nav-open .nav-toggle::after {
-  transform: translateY(-0.4rem) rotate(-45deg);
 }
 
 /* Hero */
@@ -610,17 +636,7 @@ body.nav-open .nav-toggle::after {
   border: 1px solid rgba(148, 163, 184, 0.7);
 }
 
-.badge span.icon {
-  font-size: 0.9rem;
-}
-
-.hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-/* Hero card */
+/* Hero media card */
 .hero-media {
   justify-self: center;
 }
@@ -630,22 +646,8 @@ body.nav-open .nav-toggle::after {
   border-radius: 1.25rem;
   padding: 1.5rem;
   border: 1px solid rgba(148, 163, 184, 0.6);
-  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.8);
+  box-shadow: var(--shadow-soft);
   max-width: 360px;
-}
-
-.hero-card h3 {
-  font-size: 0.95rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #a5b4fc;
-  margin-bottom: 0.75rem;
-}
-
-.hero-card p {
-  font-size: 0.9rem;
-  color: #e5e7eb;
-  margin-bottom: 1rem;
 }
 
 /* Buttons */
@@ -686,16 +688,21 @@ body.nav-open .nav-toggle::after {
   background-color: rgba(15, 23, 42, 0.85);
 }
 
-/* Sections */
-.section-heading {
-  font-size: clamp(1.6rem, 1.3rem + 0.6vw, 2.1rem);
-  margin-bottom: 0.75rem;
+/* Role-based images */
+.hero-image,
+.section-image,
+.card-image,
+.avatar-image {
+  width: 100%;
+  max-height: 360px;
+  object-fit: cover;
+  border-radius: var(--radius);
 }
 
-.section-intro {
-  max-width: 640px;
-  color: var(--text-soft);
-  margin-bottom: 2rem;
+.avatar-image {
+  max-width: 96px;
+  max-height: 96px;
+  border-radius: 50%;
 }
 
 /* About */
@@ -722,15 +729,9 @@ body.nav-open .nav-toggle::after {
 
 .service-card {
   background-color: #ffffff;
-  border-radius: 1rem;
+  border-radius: var(--radius);
   border: 1px solid var(--border-subtle);
   padding: 1.25rem 1.3rem;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
-}
-
-.service-card h3 {
-  margin-bottom: 0.5rem;
-  font-size: 1rem;
 }
 
 /* Testimonials */
@@ -746,17 +747,7 @@ body.nav-open .nav-toggle::after {
   border: 1px solid var(--border-subtle);
 }
 
-.testimonial-quote {
-  font-style: italic;
-  margin-bottom: 0.75rem;
-}
-
-.testimonial-meta {
-  font-size: 0.9rem;
-  color: var(--text-soft);
-}
-
-/* Contact */
+/* Contact section */
 .section-contact {
   background-color: #0b1120;
   color: #e5e7eb;
@@ -766,10 +757,6 @@ body.nav-open .nav-toggle::after {
   display: grid;
   gap: 2rem;
   grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-}
-
-.contact-details p {
-  margin-bottom: 0.4rem;
 }
 
 .contact-label {
@@ -783,51 +770,12 @@ body.nav-open .nav-toggle::after {
   font-weight: 500;
 }
 
-/* Contact form */
-.form {
-  max-width: 640px;
-  margin: 0 auto;
-  display: grid;
-  gap: 1rem;
-}
-
-.form-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.form-field label {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #e5e7eb;
-}
-
-input,
-textarea {
-  width: 100%;
-  padding: 0.75rem 0.9rem;
-  border-radius: 0.5rem;
-  border: 1px solid #1f2937;
-  font-size: 0.95rem;
-  line-height: 1.4;
-  background-color: rgba(15, 23, 42, 0.9);
-  color: #e5e7eb;
-}
-
-input:focus,
-textarea:focus {
-  outline: none;
-  border-color: #22c55e;
-  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.4);
-}
-
 /* Footer */
 .site-footer {
   background-color: #020617;
   color: #9ca3af;
-  padding: 1.5rem 0 2rem;
-  font-size: 0.85rem;
+  padding: 2.5rem 0;
+  font-size: 0.9rem;
 }
 
 .site-footer .footer-inner {
@@ -839,11 +787,6 @@ textarea:focus {
   align-items: center;
   flex-wrap: wrap;
   gap: 0.75rem;
-}
-
-.footer-branding {
-  font-weight: 600;
-  color: #e5e7eb;
 }
 
 /* Responsive */
@@ -898,6 +841,195 @@ textarea:focus {
 
   .hero {
     padding: 4rem 0 3rem;
+  }
+}
+`;
+
+// Multi-page site CSS (fixed design system for /generate-code)
+const MULTIPAGE_SITE_CSS = `
+:root {
+  --bg: #ffffff;
+  --bg-alt: #f9fafb;
+  --text-main: #0f172a;
+  --text-soft: #6b7280;
+  --border-subtle: #e5e7eb;
+  --primary: #2563eb;
+  --primary-soft: rgba(37, 99, 235, 0.1);
+  --accent: #22c55e;
+  --radius: 10px;
+  --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+/* Reset-ish */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  color: var(--text-main);
+  background-color: var(--bg);
+}
+
+/* Links & buttons */
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Layout utilities */
+.container {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+main {
+  padding-bottom: 3.5rem;
+}
+
+.section {
+  padding: 3.5rem 0;
+}
+
+/* Generic images */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Role-based images */
+.hero-image,
+.section-image,
+.card-image,
+.avatar-image {
+  width: 100%;
+  max-height: 360px;
+  object-fit: cover;
+  border-radius: var(--radius);
+}
+
+.avatar-image {
+  max-width: 96px;
+  max-height: 96px;
+  border-radius: 50%;
+}
+
+/* Simple grids */
+.grid-2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 2rem;
+  align-items: start;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.75rem;
+}
+
+/* Card */
+.card {
+  background-color: #ffffff;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-soft);
+  padding: 1.5rem;
+}
+
+/* Buttons */
+.btn,
+.btn-primary,
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.7rem 1.4rem;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 10px 30px rgba(37, 99, 235, 0.25);
+}
+
+.btn-primary:hover {
+  background-color: #1d4ed8;
+}
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.btn-secondary:hover {
+  background-color: var(--primary-soft);
+}
+
+/* Hero baseline for non-portfolio sites */
+body:not(.portfolio) .hero {
+  padding: 4.5rem 0 3.5rem;
+  background-color: var(--bg-alt);
+}
+
+body:not(.portfolio) .hero .grid-2 {
+  align-items: center;
+}
+
+body:not(.portfolio) .hero h1 {
+  margin-bottom: 1rem;
+}
+
+body:not(.portfolio) .hero p {
+  color: var(--text-soft);
+  max-width: 640px;
+}
+
+/* Footer baseline */
+.site-footer {
+  background-color: #020617;
+  color: #9ca3af;
+  padding: 2.5rem 0;
+  font-size: 0.9rem;
+}
+
+.site-footer .footer-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* Responsive grids */
+@media (max-width: 900px) {
+  .grid-2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .grid-3 {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 `;
@@ -1064,7 +1196,7 @@ Layout patterns:
 - Optional pricing section and a strong final CTA band.`;
 }
 
-// OpenRouter helper
+// Helper: call a model via OpenRouter
 async function callModel(prompt, model) {
   try {
     const response = await axios.post(
@@ -1079,7 +1211,7 @@ async function callModel(prompt, model) {
           Authorization: `Bearer ${OPENROUTER_API_KEY}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': APP_ORIGIN,
-          'X-Title': 'AI Website Builder',
+          'X-Title': 'CxBuild',
         },
       }
     );
@@ -1094,7 +1226,7 @@ async function callModel(prompt, model) {
   }
 }
 
-// Unsplash: get real image URL
+// Unsplash: get real image URL for given keywords and size
 async function getUnsplashImageUrl(keywords, width, height) {
   if (!UNSPLASH_ACCESS_KEY) return null;
 
@@ -1181,17 +1313,233 @@ async function replaceImagesWithUnsplash(pageHtml) {
 
   await Promise.all(tasks);
 
-  const htmlWithoutDoctype = $.html();
-  if (/<!doctype html>/i.test(pageHtml)) {
-    return '<!DOCTYPE html>\n' + htmlWithoutDoctype;
+  let html = $.html();
+  // Remove existing DOCTYPE if present, then add a single one
+  html = html.replace(/^\s*<!doctype html[^>]*>/i, '').trim();
+  return '<!DOCTYPE html>\n' + html;
+}
+
+// Extract contact fields from description (Phone:, WhatsApp:, Email:, Address:)
+function extractContactInfoFromDescription(description = '') {
+  const info = {
+    phone: '',
+    whatsapp: '',
+    email: '',
+    address: '',
+  };
+
+  const lines = description.split('\n');
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const mPhone = trimmed.match(/^phone\s*:\s*(.+)$/i);
+    const mWhats = trimmed.match(/^whatsapp\s*:\s*(.+)$/i);
+    const mEmail = trimmed.match(/^email\s*:\s*(.+)$/i);
+    const mAddr = trimmed.match(/^address\s*:\s*(.+)$/i);
+
+    if (mPhone) info.phone = mPhone[1].trim();
+    if (mWhats) info.whatsapp = mWhats[1].trim();
+    if (mEmail) info.email = mEmail[1].trim();
+    if (mAddr) info.address = mAddr[1].trim();
   }
-  return htmlWithoutDoctype;
+
+  return info;
+}
+
+// Extract brand / business name from description
+function extractBrandFromDescription(description = '') {
+  const lines = description.split('\n');
+  for (const line of lines) {
+    const m = line.trim().match(/^business\s*name\s*:\s*(.+)$/i);
+    if (m) return m[1].trim();
+  }
+  return '';
+}
+
+// Post-process multi-page HTML to enforce real contacts & CTAs
+async function postProcessHtml(pageHtml, contactInfo) {
+  const $ = cheerio.load(pageHtml, { decodeEntities: false });
+  const { phone, whatsapp, email, address } = contactInfo;
+
+  const normalizeNumber = (value) => (value || '').replace(/[^0-9]/g, '');
+
+  // --- Contact section content ---
+  const contactSection = $('#contact');
+  if (contactSection.length && (phone || whatsapp || email || address)) {
+    let block = '';
+    if (phone) block += `<p><strong>Phone:</strong> ${phone}</p>`;
+    if (whatsapp || phone) {
+      const waDisplay = whatsapp || phone;
+      block += `<p><strong>WhatsApp:</strong> ${waDisplay}</p>`;
+    }
+    if (email) block += `<p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>`;
+    if (address) block += `<p><strong>Address:</strong> ${address}</p>`;
+
+    const existingInfo = contactSection.find('.contact-info');
+    if (existingInfo.length) {
+      existingInfo.first().html(block);
+    } else {
+      contactSection.append(`<div class="contact-info">${block}</div>`);
+    }
+  }
+
+  // --- Basic tel/WhatsApp/mailto fixes ---
+  if (phone) {
+    const telClean = phone.replace(/\s+/g, '');
+    $('a[href^="tel:"]').attr('href', `tel:${telClean}`);
+  }
+
+  const waSource = whatsapp || phone;
+  if (waSource) {
+    const waDigits = normalizeNumber(waSource);
+    if (waDigits) {
+      $('a[href*="wa.me"]').each((_, el) => {
+        $(el)
+          .attr('href', `https://wa.me/${waDigits}`)
+          .attr('target', '_blank')
+          .attr('rel', 'noopener noreferrer');
+      });
+    }
+  }
+
+  if (email) {
+    $('a[href^="mailto:"]').attr('href', `mailto:${email}`);
+  }
+
+  // --- Decide best default CTA target ---
+  const waDigitsForCta = normalizeNumber(waSource);
+  const telCleanForCta = phone ? phone.replace(/\s+/g, '') : '';
+
+  let defaultHref = '#contact';
+  let defaultTarget = '_self';
+  let defaultRel = '';
+
+  if (waDigitsForCta) {
+    defaultHref = `https://wa.me/${waDigitsForCta}`;
+    defaultTarget = '_blank';
+    defaultRel = 'noopener noreferrer';
+  } else if (telCleanForCta) {
+    defaultHref = `tel:${telCleanForCta}`;
+  } else if (email) {
+    defaultHref = `mailto:${email}`;
+  }
+
+  // --- Any anchor that looks like a CTA gets wired ---
+  const ctaTextRegex = /(order|buy|shop now|add to cart|get started|start free trial|apply|enrol|enroll|admission|book|schedule|visit|tour|call|whatsapp|contact|get in touch|donate|support)/i;
+
+  $('a').each((_, el) => {
+    const $el = $(el);
+    const text = $el.text().trim();
+    const href = ($el.attr('href') || '').trim().toLowerCase();
+    const classes = $el.attr('class') || '';
+
+    const looksLikeButton =
+      /btn/.test(classes) || ctaTextRegex.test(text);
+
+    if (!looksLikeButton) return;
+
+    if (!href || href === '#' || href === 'javascript:void(0)' || href === 'javascript:void(0);') {
+      $el.attr('href', defaultHref);
+      if (defaultTarget) $el.attr('target', defaultTarget);
+      if (defaultRel) $el.attr('rel', defaultRel);
+    }
+  });
+
+  // --- <button> CTAs outside forms -> turn into <a> ---
+  $('button').each((_, el) => {
+    const $btn = $(el);
+    const text = $btn.text().trim();
+    const classes = $btn.attr('class') || '';
+
+    // Skip real form submits
+    if ($btn.closest('form').length) return;
+
+    const looksLikeCta =
+      /btn/.test(classes) || ctaTextRegex.test(text);
+
+    if (!looksLikeCta) return;
+
+    const link = $('<a></a>')
+      .addClass(classes)
+      .text(text || 'Contact us')
+      .attr('href', defaultHref);
+
+    if (defaultTarget) link.attr('target', defaultTarget);
+    if (defaultRel) link.attr('rel', defaultRel);
+
+    $btn.replaceWith(link);
+  });
+
+  return $.html();
+}
+
+// Normalize brand + nav across pages and ensure header is first in <body>
+function normalizeBrandAndNav(htmlPages, description, numPages) {
+  // Choose a brand name: from description if available, else from first page logo, else fallback
+  let brand = extractBrandFromDescription(description);
+  if (!brand && htmlPages.length > 0) {
+    const $first = cheerio.load(htmlPages[0], { decodeEntities: false });
+    const logoText = $first('.logo').first().text().trim();
+    if (logoText) brand = logoText;
+  }
+  if (!brand) brand = 'Your Site';
+
+  const baseLabels = ['Home', 'Features', 'About', 'Contact', 'More'];
+
+  function labelForIndex(i, total) {
+    if (i === 0) return 'Home';
+    if (total >= 3 && i === total - 1) return 'Contact';
+    return baseLabels[i] || `Page ${i + 1}`;
+  }
+
+  function buildNavHtml(activeIndex, total) {
+    let items = '';
+    for (let i = 0; i < total; i++) {
+      const href = `page${i + 1}.html`;
+      const label = labelForIndex(i, total);
+      const activeClass = i === activeIndex ? ' class="active"' : '';
+      items += `<li><a href="${href}"${activeClass}>${label}</a></li>`;
+    }
+    return `<ul class="nav-links">${items}</ul>`;
+  }
+
+  return htmlPages.map((pageHtml, pageIndex) => {
+    const $ = cheerio.load(pageHtml, { decodeEntities: false });
+
+    // Unify logo text AND href
+    $('.logo').each((_, el) => {
+      $(el).text(brand);
+      $(el).attr('href', 'page1.html'); // logo always goes to home
+    });
+
+    // Replace nav-links with our canonical nav
+    const navUl = $('.nav-links').first();
+    if (navUl.length) {
+      const navHtml = buildNavHtml(pageIndex, numPages);
+      navUl.replaceWith(navHtml);
+    }
+
+    // Ensure header is the first child inside <body>
+    const header = $('header.site-header').first();
+    if (header.length) {
+      header.prependTo('body');
+    }
+
+    // Set <title> to include brand + page label
+    const pageLabel = labelForIndex(pageIndex, numPages);
+    const titleEl = $('title').first();
+    if (titleEl.length) {
+      titleEl.text(`${pageLabel} – ${brand}`);
+    } else {
+      $('head').append(`<title>${pageLabel} – ${brand}</title>`);
+    }
+
+    return $.html();
+  });
 }
 
 // Business/showcase content generator returning JSON with richer copy
 async function generateBusinessContent(description) {
-  const model = process.env.BUSINESS_MODEL || 'openai/gpt-oss-20b:free';
-
   const prompt = `
 You are generating structured content for a simple, professional business website.
 
@@ -1253,7 +1601,7 @@ Rules:
 - Keep JSON well-formed and valid.
 `;
 
-  const raw = await callModel(prompt, model);
+  const raw = await callModel(prompt, BUSINESS_MODEL);
 
   try {
     const cleaned = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
@@ -1280,22 +1628,16 @@ function buildBusinessHtml(content) {
   const rawPhone = (contact.phone || '').trim();
   const rawWhatsApp = (contact.whatsapp || '').trim();
 
-  const normalizeForHref = (value) => value.replace(/[^0-9]/g, '');
+  const normalizeNumber = (value) => (value || '').replace(/[^0-9]/g, '');
 
   const telHref = rawPhone ? `tel:${rawPhone.replace(/\s+/g, '')}` : null;
-  // Prefer explicit WhatsApp if provided, otherwise reuse phone as WhatsApp
   const waNumber = rawWhatsApp || rawPhone;
-  const waHref = waNumber ? `https://wa.me/${normalizeForHref(waNumber)}` : null;
+  const waHref = waNumber ? `https://wa.me/${normalizeNumber(waNumber)}` : null;
 
-  // Primary CTA logic:
-  // 1) If WhatsApp available → open WhatsApp chat
-  // 2) Else if phone available → tel:
-  // 3) Else → scroll to contact section
   const primaryHref = waHref || telHref || '#contact';
   const primaryTarget = waHref ? '_blank' : '_self';
   const primaryRel = waHref ? 'noopener noreferrer' : '';
 
-  // Secondary CTA: scroll to services section by default
   const secondaryHref = '#services';
 
   const heroBadgesHtml = (hero.badges || [])
@@ -1345,7 +1687,6 @@ function buildBusinessHtml(content) {
   `
     : '';
 
-  // Make contact details clickable (phone, WhatsApp, email, address)
   const contactDetailsHtml = `
     ${
       rawPhone
@@ -1385,6 +1726,8 @@ function buildBusinessHtml(content) {
     }
   `;
 
+  const brandTitle = hero.title || 'Your Business';
+
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -1392,12 +1735,12 @@ function buildBusinessHtml(content) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="styles.css" />
-  <title>${hero.title || 'Business Website'}</title>
+  <title>${brandTitle}</title>
 </head>
 <body class="business">
   <header class="site-header">
     <div class="header-inner">
-      <a href="index.html" class="logo">${hero.title || 'Your Business'}</a>
+      <a href="index.html" class="logo">${brandTitle}</a>
       <button class="nav-toggle" aria-label="Toggle navigation">Menu</button>
       <nav class="site-nav">
         <ul class="nav-links">
@@ -1509,7 +1852,7 @@ function buildBusinessHtml(content) {
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-branding">
-        ${hero.title || 'Your Business'}
+        ${brandTitle}
       </div>
       <div>
         © ${new Date().getFullYear()} All rights reserved.
@@ -1529,7 +1872,7 @@ async function generateWebsiteManager(description, numPages) {
   const reference = getReferenceSiteForDescription(description);
   const isPortfolio = description.toLowerCase().includes('portfolio');
 
-  // 1) PLAN THE WHOLE SITE FIRST – richer section descriptions with reference
+  // 1) PLAN THE WHOLE SITE FIRST
   const planningPrompt = `
 You are an expert UX/web designer.
 
@@ -1595,7 +1938,7 @@ Rules:
 - Do NOT include any code; this is just a human-readable plan.
 `;
 
-  const sitePlan = await callModel(planningPrompt, 'x-ai/grok-code-fast-1');
+  const sitePlan = await callModel(planningPrompt, MODEL_MAIN);
 
   // Navigation file mapping
   const navFileLines = Array.from(
@@ -1634,6 +1977,16 @@ HTML requirements (important):
   - Add at least 2–4 sentences of descriptive copy (or 3–6 bullet points) that explain benefits, features, or details.
   - Avoid sections that only have 1 short sentence or a single line of text.
 - The overall page should feel like it could be used as-is by a real business (no placeholder-y text).
+
+Layout classes (very important):
+- You MUST use only these layout and UI classes when building sections:
+  - .container – to center and constrain content width
+  - .section – for top/bottom padding of each major section
+  - .grid-2, .grid-3 – for two- and three-column layouts
+  - .card – for any boxed content (features, testimonials, stats)
+  - .btn, .btn-primary, .btn-secondary – for buttons and CTAs
+- Do NOT invent new CSS classes for layout or components.
+- Do NOT use inline style attributes.
 
 Global header and footer (very important):
 - Every page MUST use the SAME basic header and footer structure.
@@ -1718,10 +2071,7 @@ Return ONLY valid HTML that would go inside <body>.
 
     return (async () => {
       try {
-        const bodyHtml = await callModel(
-          pagePrompt,
-          'x-ai/grok-code-fast-1'
-        );
+        const bodyHtml = await callModel(pagePrompt, MODEL_MAIN);
 
         return `
 <!DOCTYPE html>
@@ -1744,10 +2094,7 @@ Return ONLY valid HTML that would go inside <body>.
           err.message
         );
 
-        const retryBodyHtml = await callModel(
-          pagePrompt,
-          'x-ai/grok-code-fast-1'
-        );
+        const retryBodyHtml = await callModel(pagePrompt, MODEL_MAIN);
 
         return `
 <!DOCTYPE html>
@@ -1770,97 +2117,25 @@ Return ONLY valid HTML that would go inside <body>.
 
   const htmlPagesRaw = await Promise.all(pagePromises);
 
-  // Replace generated image URLs with real Unsplash URLs
-  const htmlPages = await Promise.all(
-    htmlPagesRaw.map((page) => replaceImagesWithUnsplash(page))
+  // Extract contact info from description
+  const contactInfo = extractContactInfoFromDescription(description);
+
+  // Post-process HTML for contacts and CTAs
+  const htmlPagesPost = await Promise.all(
+    htmlPagesRaw.map((page) => postProcessHtml(page, contactInfo))
   );
 
-  // Combine HTML for CSS context
-  const allHtml = htmlPages.join('\n\n<!-- PAGE BREAK -->\n\n');
+  // Normalize brand + nav across all pages and ensure header is first
+  const htmlPagesBrandNav = normalizeBrandAndNav(htmlPagesPost, description, numPages);
 
-  // 3) GENERATE CSS
-  const cssPrompt = `
-You are writing a single global stylesheet (styles.css) for the multi-page website below.
+  // Replace generated image URLs with real Unsplash URLs
+  const htmlPages = await Promise.all(
+    htmlPagesBrandNav.map((page) => replaceImagesWithUnsplash(page))
+  );
 
-Here is the FULL HTML for ALL pages:
-----------------
-${allHtml}
-----------------
-
-Requirements:
-- Use ONLY standard CSS. Do NOT use Tailwind CSS or any CSS framework.
-- Create a modern, clean, professional design:
-  - Max-width centered content containers (e.g., .container { max-width: 1120px; margin: 0 auto; padding: 0 1.5rem; }).
-  - Comfortable spacing between sections (padding around sections, clear separation).
-  - Clear typography hierarchy:
-    - Larger font-size and weight for headings (h1, h2, h3).
-    - Readable body text with adequate line-height.
-    - Distinct styles for buttons and links.
-  - A consistent color palette suitable for a modern SaaS / B2B or ecommerce product (for example, deep blue primary, neutral grays, and one accent color).
-
-Typography (important):
-- Base body text should be around 16px (e.g., body { font-size: 1rem; } on a 16px root).
-- Do NOT use extremely small font sizes (avoid anything below 0.875rem / 14px for any text).
-- Headings should be clearly larger than body text (h1 > h2 > h3).
-
-Navigation and header:
-- Classes to style:
-  - .site-header, .header-inner, .logo
-  - .site-nav, .nav-toggle, .nav-links, .nav-links li, .nav-links a
-- On desktop:
-  - Show navigation links inline.
-- On small screens:
-  - .nav-toggle should be visible.
-  - The main navigation elements are ".site-nav" and ".nav-links".
-  - Hide the nav links by default on small screens.
-  - When ".site-nav" or ".nav-links" has an "active" class, or when the <body> has class "nav-open", show the navigation links (e.g., display: block or flex).
-- Optionally style a ".scrolled" class on ".site-header" to add a subtle shadow or background change when the user scrolls.
-
-Layout & sections:
-- Use a consistent max-width container (e.g., .container { max-width: 1120px; margin: 0 auto; padding: 0 1.5rem; }) and center main content inside it.
-- Give each section comfortable vertical padding (around 3–4rem top and bottom).
-- Avoid random large margins that push content to the very edges.
-- Style major layout classes that appear in the HTML, especially:
-  - Hero sections: .hero, .hero-inner, .hero-content, .hero-actions, .hero-media, .hero-image
-  - Trust & social proof: .trust, .trust-inner, .client-logos, .testimonials
-  - Features: .features, .feature-grid, .feature-card
-  - How it works: .how-it-works, .steps
-  - CTA bands: .cta-band, .cta-inner, .cta-actions
-  - Footer: .site-footer, .footer-inner, .footer-branding, .footer-links, .footer-title, .footer-tagline
-
-Forms:
-- Style forms (.form, form) with a clean, stacked layout (one field per row) and even spacing.
-- Inputs, selects, and textareas should have full-width, comfortable padding, and consistent border-radius.
-
-Buttons and links:
-- Style .btn, .btn-primary, .btn-secondary with clear hover states.
-- Ensure buttons and links have sufficient contrast and accessible hit areas.
-
-Images:
-- Ensure images are responsive and visually balanced:
-  - img, .hero-image, .section-image, .card-image, .avatar-image {
-      max-width: 100%;
-      height: auto;
-      display: block;
-    }
-  - For hero and card images, you can add border-radius and a light box-shadow.
-
-Responsiveness:
-- Use media queries to adapt:
-  - Stack grids and multi-column layouts vertically on smaller screens.
-  - Adjust padding and font sizes for small screens for readability.
-
-Consistency:
-- Header and footer should look consistent across all pages.
-- Use the same typography, colors, and button styles site-wide.
-
-Return ONLY valid CSS code. No comments, no explanations.
-`;
-
-  const cssRaw = await callModel(cssPrompt, 'kwaipilot/kat-coder-pro:free');
-
+  // 3) Use fixed CSS design system for multi-page sites
   const css =
-    cssRaw +
+    MULTIPAGE_SITE_CSS +
     '\n\n' +
     TYPOGRAPHY_OVERRIDES +
     '\n\n' +
@@ -1878,7 +2153,8 @@ Return ONLY valid CSS code. No comments, no explanations.
 
 // Validation for /generate-code
 function validateGenerateCode(req, res, next) {
-  const { description, numPages } = req.body;
+  const { description } = req.body;
+  const numPages = Number(req.body.numPages);
 
   if (typeof description !== 'string' || !description.trim()) {
     return res.status(400).json({ error: 'description is required' });
@@ -1890,10 +2166,11 @@ function validateGenerateCode(req, res, next) {
       .json({ error: 'numPages must be an integer between 1 and 5' });
   }
 
+  req.body.numPages = numPages;
   next();
 }
 
-// Main multi-page AI endpoint (existing)
+// Main multi-page AI endpoint
 app.post(
   '/generate-code',
   generateLimiter,
@@ -1910,7 +2187,7 @@ app.post(
   }
 );
 
-// New: single-page business/showcase site using templates
+// Single-page business/showcase site using templates
 app.post('/generate-business-site', async (req, res) => {
   const { description } = req.body;
 
@@ -1920,7 +2197,11 @@ app.post('/generate-business-site', async (req, res) => {
 
   try {
     const content = await generateBusinessContent(description);
-    const html = buildBusinessHtml(content);
+    const rawHtml = buildBusinessHtml(content);
+
+    // Reuse contact info from description to wire CTAs
+    const contactInfo = extractContactInfoFromDescription(description);
+    const html = await postProcessHtml(rawHtml, contactInfo);
 
     const pages = ['index.html'];
 
@@ -1936,7 +2217,7 @@ app.post('/generate-business-site', async (req, res) => {
   }
 });
 
-// Testing-only endpoints (unchanged)
+// Testing-only endpoints
 app.post('/generate-html', async (req, res) => {
   const { description, numPages } = req.body;
   try {
@@ -1962,7 +2243,7 @@ Requirements:
 `;
 
   try {
-    const css = await callModel(prompt, 'qwen/qwen3-coder');
+    const css = await callModel(prompt, MODEL_CODE);
     res.json({ css });
   } catch (error) {
     console.error('CSS generation failed:', error.message);
@@ -1984,10 +2265,7 @@ Requirements:
 `;
 
   try {
-    const js = await callModel(
-      prompt,
-      'meta-llama/llama-3.3-70b-instruct:free'
-    );
+    const js = await callModel(prompt, MODEL_CODE);
     res.json({ js });
   } catch (error) {
     console.error('JS generation failed:', error.message);

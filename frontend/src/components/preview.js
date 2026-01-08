@@ -4,6 +4,11 @@ function Preview({ pages, html, css, js }) {
   const [currentPage, setCurrentPage] = useState(0);
   const [fullScreen, setFullScreen] = useState(false);
 
+  // Reset current page when pages change (new generation)
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [pages.length]);
+
   // Listen for navigation messages from the iframe (from script.js)
   useEffect(() => {
     function handleMessage(event) {
@@ -17,21 +22,23 @@ function Preview({ pages, html, css, js }) {
     return () => window.removeEventListener('message', handleMessage);
   }, [pages]);
 
-  // Extract only the <body> contents from the generated HTML
-  const bodyHtml = useMemo(() => {
+  // Extract <body> contents AND original <body class="...">
+  const { bodyHtml, bodyClass } = useMemo(() => {
     const raw = html[currentPage] || '<h1>No HTML for this page</h1>';
 
     if (typeof DOMParser === 'undefined') {
-      return raw;
+      return { bodyHtml: raw, bodyClass: 'fade-in' };
     }
 
     try {
       const parser = new DOMParser();
       const doc = parser.parseFromString(raw, 'text/html');
-      const inner = doc.body.innerHTML.trim();
-      return inner || raw;
+      const inner = (doc.body && doc.body.innerHTML.trim()) || raw;
+      const originalClass = (doc.body && doc.body.getAttribute('class')) || '';
+      const combinedClass = ['fade-in', originalClass].filter(Boolean).join(' ');
+      return { bodyHtml: inner, bodyClass: combinedClass };
     } catch {
-      return raw;
+      return { bodyHtml: raw, bodyClass: 'fade-in' };
     }
   }, [html, currentPage]);
 
@@ -44,7 +51,7 @@ function Preview({ pages, html, css, js }) {
         <title>Generated Website</title>
         <style>${css || ''}</style>
       </head>
-      <body class="fade-in">
+      <body class="${bodyClass}">
         ${bodyHtml}
         <script>${js || ''}</script>
       </body>
@@ -82,8 +89,9 @@ function Preview({ pages, html, css, js }) {
           </button>
         </div>
       </div>
-      {/* Restricted sandbox for full isolation - no same-origin or top-navigation */}
+
       <iframe
+        key={currentPage}
         srcDoc={fullHtml}
         title="Website Preview"
         className={`w-full border rounded-2xl ${fullScreen ? 'h-full' : 'h-96'}`}
