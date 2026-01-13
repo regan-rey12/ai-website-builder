@@ -1,5 +1,5 @@
 // src/components/builder.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import Preview from './preview';
@@ -68,6 +68,13 @@ function Builder() {
 
   const selectedTemplate =
     templates.find((t) => t.key === selectedTemplateKey) || templates[0];
+
+  // Auto-clear success message after 3 seconds
+  useEffect(() => {
+    if (!success) return;
+    const t = setTimeout(() => setSuccess(''), 3000);
+    return () => clearTimeout(t);
+  }, [success]);
 
   const generateCode = async () => {
     if (!description.trim()) {
@@ -166,16 +173,13 @@ ${description}
   return (
     <div className="space-y-4 relative">
       {/* Template + description + actions */}
-      <div className="bg-white dark:bg-gray-900 p-4 sm:p-5 rounded-2xl shadow-lg shadow-black/5 space-y-3">
+      <div className="bg-slate-900 text-slate-50 rounded-2xl border border-slate-800 p-4 sm:p-5 shadow-md shadow-black/20 space-y-3">
         {/* Templates row */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-base sm:text-lg font-semibold text-slate-50">
               Template
             </h2>
-            <span className="text-[11px] text-gray-500 dark:text-gray-400">
-              Portfolio &amp; Blog are strongest
-            </span>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {templates.map((template) => {
@@ -190,19 +194,19 @@ ${description}
                   onClick={() => loadTemplate(template)}
                   className={`px-3 py-1 rounded-full text-[11px] font-medium border transition-all ${
                     isSelected
-                      ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:border-blue-400 dark:text-blue-100'
-                      : 'border-gray-300 text-gray-700 dark:border-gray-700 dark:text-gray-200 hover:border-blue-400'
+                      ? 'border-emerald-400 bg-emerald-500/10 text-emerald-300'
+                      : 'border-slate-600 text-slate-200 hover:border-emerald-400 hover:text-emerald-300'
                   }`}
                   title={template.desc}
                 >
                   {template.title}
                   {isRecommended && (
-                    <span className="ml-1 px-1.5 rounded-full text-[9px] bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-200">
+                    <span className="ml-1 px-1.5 rounded-full text-[9px] bg-emerald-500/20 text-emerald-300">
                       Recommended
                     </span>
                   )}
                   {isBeta && (
-                    <span className="ml-1 px-1.5 rounded-full text-[9px] bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200">
+                    <span className="ml-1 px-1.5 rounded-full text-[9px] bg-amber-500/20 text-amber-300">
                       Beta
                     </span>
                   )}
@@ -210,32 +214,26 @@ ${description}
               );
             })}
           </div>
-          <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-            {selectedTemplate.desc}
-          </p>
         </div>
 
         {/* Description + pages */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-base sm:text-lg font-semibold text-slate-50">
               Description
             </h2>
-            <span className="text-[11px] text-gray-500 dark:text-gray-400">
-              Enter = generate · Shift+Enter = new line
-            </span>
           </div>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Example: 4-page portfolio for a Ugandan frontend developer with projects, skills, about and contact. Phone/WhatsApp/Email: ..."
-            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 text-gray-900 dark:text-white text-xs sm:text-sm mb-2"
+            placeholder="Describe your site and include Phone / WhatsApp / Email."
+            className="w-full p-3 border border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500/70 bg-slate-950 text-slate-50 text-xs sm:text-sm mb-2"
             rows={3}
           />
 
           <div className="flex flex-wrap items-center gap-2">
-            <label className="text-[11px] font-semibold text-gray-900 dark:text-white">
+            <label className="text-[11px] font-semibold text-slate-50">
               Pages
             </label>
             <input
@@ -251,36 +249,35 @@ ${description}
                   setNumPages(Math.min(5, Math.max(1, value)));
                 }
               }}
-              className="p-1.5 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 text-gray-900 dark:text-white w-16 text-xs"
+              className="p-1.5 border border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500/70 bg-slate-950 text-slate-50 w-16 text-xs"
             />
-            <span className="text-[10px] text-gray-500 dark:text-gray-400">
-              Add Phone / WhatsApp / Email for better contact buttons.
-            </span>
           </div>
         </div>
 
         {/* Actions */}
         <div className="flex flex-wrap gap-2 justify-center pt-1">
+          {/* Primary button */}
           <button
             onClick={generateCode}
             disabled={loading}
-            className={`px-6 py-2.5 rounded-full font-semibold text-xs sm:text-sm transition-all duration-200 shadow-md shadow-black/5 ${
+            className={`px-6 py-2.5 rounded-full font-semibold text-xs sm:text-sm transition-all duration-200 shadow-md shadow-black/25 ${
               loading
-                ? 'bg-gray-400 cursor-not-allowed text-white'
-                : 'bg-gradient-to-r from-green-500 to-blue-500 text-white hover:scale-105'
+                ? 'bg-slate-500 cursor-not-allowed text-slate-100'
+                : 'bg-emerald-500 hover:bg-emerald-600 text-slate-950 hover:scale-[1.02]'
             }`}
           >
             {loading ? 'Generating…' : 'Generate Website'}
           </button>
 
+          {/* Secondary button */}
           {code.pages.length > 0 && (
             <button
               onClick={downloadZip}
               disabled={loading}
-              className={`px-6 py-2.5 rounded-full font-semibold text-xs sm:text-sm transition-all duration-200 shadow-md shadow-black/5 ${
+              className={`px-6 py-2.5 rounded-full font-semibold text-xs sm:text-sm transition-all duration-200 shadow-md shadow-black/25 ${
                 loading
-                  ? 'bg-gray-400 cursor-not-allowed text-white'
-                  : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:scale-105'
+                  ? 'bg-slate-500 cursor-not-allowed text-slate-100'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-50 border border-slate-600 hover:scale-[1.02]'
               }`}
             >
               Download ZIP
@@ -292,12 +289,12 @@ ${description}
         {(success || error) && (
           <div className="text-center pt-1">
             {success && (
-              <p className="inline-block px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs">
+              <p className="inline-block px-3 py-1.5 bg-emerald-500/10 text-emerald-300 rounded-lg text-xs">
                 {success}
               </p>
             )}
             {error && (
-              <p className="inline-block px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-xs max-w-md">
+              <p className="inline-block px-3 py-1.5 bg-rose-500/10 text-rose-300 rounded-lg text-xs max-w-md">
                 {error}
               </p>
             )}

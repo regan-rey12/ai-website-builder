@@ -1,4 +1,4 @@
-// src/utils/userId.js
+// src/userId.js
 export function getUserId() {
   if (typeof window === 'undefined') return null;
   try {
@@ -11,7 +11,8 @@ export function getUserId() {
       localStorage.setItem('voidbuild_user_id', id);
     }
     return id;
-  } catch {
+  } catch (err) {
+    console.error('Failed to read or set voidbuild_user_id:', err);
     return null;
   }
 }

@@ -4,6 +4,8 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const rateLimit = require('express-rate-limit');
 const cheerio = require('cheerio');
+const fs = require('fs');
+const path = require('path');
 
 dotenv.config();
 
@@ -35,6 +37,12 @@ if (allowedOriginsEnv) {
   app.use(cors());
 }
 
+// Attach client ID from header, if present
+app.use((req, res, next) => {
+  req.clientId = req.header('x-client-id') || null;
+  next();
+});
+
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const APP_ORIGIN = process.env.APP_ORIGIN || 'http://localhost:3000';
@@ -50,6 +58,66 @@ const BUSINESS_MODEL = process.env.BUSINESS_MODEL || MODEL_MAIN;
 if (!OPENROUTER_API_KEY) {
   console.error('Missing OPENROUTER_API_KEY in environment variables.');
   process.exit(1);
+}
+
+// --- Logging setup (events.log & feedback.log) ---
+
+const eventsPath = path.join(__dirname, 'events.log');
+const feedbackPath = path.join(__dirname, 'feedback.log');
+
+let eventsStream = null;
+let feedbackStream = null;
+
+try {
+  eventsStream = fs.createWriteStream(eventsPath, { flags: 'a' });
+} catch (err) {
+  console.error('Failed to open events.log:', err.message);
+}
+
+try {
+  feedbackStream = fs.createWriteStream(feedbackPath, { flags: 'a' });
+} catch (err) {
+  console.error('Failed to open feedback.log:', err.message);
+}
+
+function safeWrite(stream, line) {
+  if (!stream) {
+    console.log('[LOG FALLBACK]', line);
+    return;
+  }
+  stream.write(line + '\n');
+}
+
+function logEvent({ userId, name, route, data }) {
+  try {
+    const line = JSON.stringify({
+      ts: new Date().toISOString(),
+      type: 'event',
+      userId: userId || null,
+      name,
+      route,
+      data: data || null,
+    });
+    safeWrite(eventsStream, line);
+  } catch (err) {
+    console.error('logEvent error:', err.message);
+  }
+}
+
+function logFeedback({ userId, route, message, extra }) {
+  try {
+    const line = JSON.stringify({
+      ts: new Date().toISOString(),
+      type: 'feedback',
+      userId: userId || null,
+      route,
+      message,
+      extra: extra || null,
+    });
+    safeWrite(feedbackStream, line);
+  } catch (err) {
+    console.error('logFeedback error:', err.message);
+  }
 }
 
 // Rate limiter for main generation endpoint
@@ -2177,11 +2245,31 @@ app.post(
   validateGenerateCode,
   async (req, res) => {
     const { description, numPages } = req.body;
+
+    // Log usage event
+ logEvent({
+  userId: req.clientId,
+  name: 'builder_generate_multi_page',
+  route: '/generate-code',
+  data: {
+    numPages,
+    descriptionLength: (description || '').length,
+  },
+});
+
     try {
       const result = await generateWebsiteManager(description, numPages);
       res.json(result);
     } catch (error) {
       console.error('Multi-model generation failed:', error.message);
+
+     logEvent({
+  userId: req.clientId,
+  name: 'builder_generate_multi_page_error',
+  route: '/generate-code',
+  data: { error: error.message },
+});
+
       res.status(500).json({ error: 'Multi-model generation failed' });
     }
   }
@@ -2194,6 +2282,16 @@ app.post('/generate-business-site', async (req, res) => {
   if (typeof description !== 'string' || !description.trim()) {
     return res.status(400).json({ error: 'description is required' });
   }
+
+  // Log usage event
+ logEvent({
+  userId: req.clientId,
+  name: 'builder_generate_business',
+  route: '/generate-business-site',
+  data: {
+    descriptionLength: description.length,
+  },
+});
 
   try {
     const content = await generateBusinessContent(description);
@@ -2213,18 +2311,63 @@ app.post('/generate-business-site', async (req, res) => {
     });
   } catch (error) {
     console.error('Business site generation failed:', error.message);
+
+    logEvent({
+  userId: req.clientId,
+  name: 'builder_generate_business_error',
+  route: '/generate-business-site',
+  data: { error: error.message },
+});
+
     res.status(500).json({ error: 'Business site generation failed' });
   }
+});
+
+// Feedback endpoint (writes to feedback.log)
+app.post('/feedback', (req, res) => {
+  const { message, extra } = req.body || {};
+
+  if (!message || typeof message !== 'string') {
+    return res.status(400).json({ error: 'message is required' });
+  }
+
+  logFeedback({
+    userId: req.clientId,
+    route: '/feedback',
+    message,
+    extra: extra || null,
+  });
+
+  res.json({ ok: true });
 });
 
 // Testing-only endpoints
 app.post('/generate-html', async (req, res) => {
   const { description, numPages } = req.body;
+
+ logEvent({
+  userId: req.clientId,
+  name: 'builder_generate_html_test',
+  route: '/generate-html',
+  data: {
+    numPages,
+    descriptionLength: (description || '').length,
+  },
+});
+
   try {
     const result = await generateWebsiteManager(description, numPages);
     res.json({ html: result.html });
   } catch (error) {
     console.error('HTML generation failed:', error.message);
+
+    logEvent({
+  userId: req.clientId,
+  name: 'builder_generate_html_test_error',
+  route: '/generate-html',
+  data: { error: error.message },
+});
+
     res.status(500).json({ error: 'HTML generation failed' });
   }
 });
@@ -2242,11 +2385,28 @@ Requirements:
 - Return ONLY CSS code with no comments or explanations.
 `;
 
+ logEvent({
+  userId: req.clientId,
+  name: 'builder_generate_css',
+  route: '/generate-css',
+  data: {
+    descriptionLength: (description || '').length,
+  },
+});
+
   try {
     const css = await callModel(prompt, MODEL_CODE);
     res.json({ css });
   } catch (error) {
     console.error('CSS generation failed:', error.message);
+
+    logEvent({
+  userId: req.clientId,
+  name: 'builder_generate_css_error',
+  route: '/generate-css',
+  data: { error: error.message },
+});
+
     res.status(500).json({ error: 'CSS generation failed' });
   }
 });
@@ -2264,11 +2424,28 @@ Requirements:
 - Return ONLY JS code with no comments or explanations.
 `;
 
+  logEvent({
+  userId: req.clientId,
+  name: 'builder_generate_js',
+  route: '/generate-js',
+  data: {
+    descriptionLength: (description || '').length,
+  },
+});
+
   try {
     const js = await callModel(prompt, MODEL_CODE);
     res.json({ js });
   } catch (error) {
     console.error('JS generation failed:', error.message);
+
+    logEvent({
+  userId: req.clientId,
+  name: 'builder_generate_js_error',
+  route: '/generate-js',
+  data: { error: error.message },
+});
+
     res.status(500).json({ error: 'JS generation failed' });
   }
 });
