@@ -1,8 +1,12 @@
 ﻿node_modules/
-client/node_modules/
-server/node_modules/
+**/node_modules/
+client/build/
+build/
+dist/
+.next/
 .env
-server/.env
+**/.env
 .env.local
-combined_code.txt
-rgverse-share.zip
+*.log
+backend/events.log
+backend/feedback.log
