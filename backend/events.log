@@ -47,3 +47,34 @@
 {"ts":"2026-01-13T03:59:25.678Z","type":"event","userId":null,"name":"generate_code_error","route":"/generate-code","data":{"error":"Failed to generate with kwaipilot/kat-coder-pro:free"}}
 {"ts":"2026-01-13T03:59:52.647Z","type":"event","userId":null,"name":"builder_generate_multi_page","route":"/generate-code","data":{"numPages":3,"descriptionLength":358}}
 {"ts":"2026-01-13T03:59:52.928Z","type":"event","userId":null,"name":"builder_generate_multi_page_error","route":"/generate-code","data":{"error":"Failed to generate with kwaipilot/kat-coder-pro:free"}}
+{"ts":"2026-05-15T03:54:10.332Z","type":"event","userId":null,"name":"builder_generate_multi_page","route":"/generate-code","data":{"numPages":4,"descriptionLength":371}}
+{"ts":"2026-05-15T03:54:10.903Z","type":"event","userId":null,"name":"builder_generate_multi_page_error","route":"/generate-code","data":{"error":"Failed to generate with kwaipilot/kat-coder-pro:free"}}
+{"ts":"2026-05-15T03:54:38.980Z","type":"event","userId":null,"name":"builder_generate_multi_page","route":"/generate-code","data":{"numPages":4,"descriptionLength":371}}
+{"ts":"2026-05-15T03:54:39.034Z","type":"event","userId":null,"name":"builder_generate_multi_page_error","route":"/generate-code","data":{"error":"Failed to generate with kwaipilot/kat-coder-pro:free"}}
+{"ts":"2026-05-15T03:59:29.974Z","type":"event","userId":null,"name":"builder_generate_multi_page","route":"/generate-code","data":{"numPages":4,"descriptionLength":371}}
+{"ts":"2026-05-15T03:59:30.663Z","type":"event","userId":null,"name":"builder_generate_multi_page_error","route":"/generate-code","data":{"error":"Failed to generate with kwaipilot/kat-coder-pro:free"}}
+{"ts":"2026-05-15T04:00:28.343Z","type":"event","userId":null,"name":"builder_generate_multi_page","route":"/generate-code","data":{"numPages":4,"descriptionLength":371}}
+{"ts":"2026-05-15T04:00:29.043Z","type":"event","userId":null,"name":"builder_generate_multi_page_error","route":"/generate-code","data":{"error":"Failed to generate with kwaipilot/kat-coder-pro:free"}}
+{"ts":"2026-05-15T04:07:48.253Z","type":"event","userId":null,"name":"builder_generate_multi_page","route":"/generate-code","data":{"numPages":4,"descriptionLength":371}}
+{"ts":"2026-05-15T04:07:48.966Z","type":"event","userId":null,"name":"builder_generate_multi_page_error","route":"/generate-code","data":{"error":"Failed to generate with meta-llama/llama-3.1-8b-instruct"}}
+{"ts":"2026-05-15T04:10:58.233Z","type":"event","userId":null,"name":"builder_generate_multi_page","route":"/generate-code","data":{"numPages":3,"descriptionLength":358}}
+{"ts":"2026-05-15T04:10:59.162Z","type":"event","userId":null,"name":"builder_generate_multi_page_error","route":"/generate-code","data":{"error":"Failed to generate with meta-llama/llama-3.1-8b-instruct"}}
+{"ts":"2026-05-15T04:11:29.558Z","type":"event","userId":null,"name":"builder_generate_multi_page","route":"/generate-code","data":{"numPages":3,"descriptionLength":366}}
+{"ts":"2026-05-15T04:11:29.958Z","type":"event","userId":null,"name":"builder_generate_multi_page_error","route":"/generate-code","data":{"error":"Failed to generate with openai/gpt-4o-mini"}}
+{"ts":"2026-05-15T04:13:11.726Z","type":"event","userId":null,"name":"builder_generate_multi_page","route":"/generate-code","data":{"numPages":4,"descriptionLength":371}}
+{"ts":"2026-05-15T04:13:13.036Z","type":"event","userId":null,"name":"builder_generate_multi_page_error","route":"/generate-code","data":{"error":"Failed to generate with x-ai/grok-code-fast-1"}}
+{"ts":"2026-05-15T04:17:03.106Z","type":"event","userId":null,"name":"builder_generate_multi_page","route":"/generate-code","data":{"numPages":4,"descriptionLength":371}}
+{"ts":"2026-05-15T04:22:56.683Z","type":"event","userId":null,"name":"builder_generate_multi_page","route":"/generate-code","data":{"numPages":3,"descriptionLength":366}}
+{"ts":"2026-05-15T04:22:56.708Z","type":"event","userId":null,"name":"builder_generate_multi_page_error","route":"/generate-code","data":{"error":"Failed to generate with x-ai/grok-code-fast-1"}}
+{"ts":"2026-05-15T04:23:01.366Z","type":"event","userId":null,"name":"builder_generate_multi_page","route":"/generate-code","data":{"numPages":3,"descriptionLength":366}}
+{"ts":"2026-05-15T04:23:01.372Z","type":"event","userId":null,"name":"builder_generate_multi_page_error","route":"/generate-code","data":{"error":"Failed to generate with x-ai/grok-code-fast-1"}}
+{"ts":"2026-05-15T04:24:02.372Z","type":"event","userId":null,"name":"builder_generate_multi_page","route":"/generate-code","data":{"numPages":3,"descriptionLength":366}}
+{"ts":"2026-05-15T04:24:02.401Z","type":"event","userId":null,"name":"builder_generate_multi_page_error","route":"/generate-code","data":{"error":"Failed to generate with openai/gpt-oss-20b:free"}}
+{"ts":"2026-05-15T04:25:00.515Z","type":"event","userId":null,"name":"builder_generate_multi_page","route":"/generate-code","data":{"numPages":3,"descriptionLength":358}}
+{"ts":"2026-05-15T04:25:00.521Z","type":"event","userId":null,"name":"builder_generate_multi_page_error","route":"/generate-code","data":{"error":"Failed to generate with openai/gpt-oss-20b:free"}}
+{"ts":"2026-05-15T04:26:04.537Z","type":"event","userId":null,"name":"builder_generate_multi_page","route":"/generate-code","data":{"numPages":3,"descriptionLength":366}}
+{"ts":"2026-05-15T04:26:04.562Z","type":"event","userId":null,"name":"builder_generate_multi_page_error","route":"/generate-code","data":{"error":"Failed to generate with anthropic/claude-3-haiku"}}
+{"ts":"2026-05-15T04:29:38.658Z","type":"event","userId":null,"name":"builder_generate_multi_page","route":"/generate-code","data":{"numPages":3,"descriptionLength":366}}
+{"ts":"2026-05-15T04:29:38.666Z","type":"event","userId":null,"name":"builder_generate_multi_page_error","route":"/generate-code","data":{"error":"Failed to generate with anthropic/claude-3-haiku"}}
+{"ts":"2026-05-15T10:37:29.787Z","type":"event","userId":null,"name":"builder_generate_multi_page","route":"/generate-code","data":{"numPages":2,"descriptionLength":359}}
+{"ts":"2026-05-16T11:25:09.390Z","type":"event","userId":null,"name":"builder_generate_multi_page","route":"/generate-code","data":{"numPages":3,"descriptionLength":358}}

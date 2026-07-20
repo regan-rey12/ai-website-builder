@@ -51,8 +51,8 @@ const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
 const UNSPLASH_API_BASE = 'https://api.unsplash.com';
 
 // Only two models used
-const MODEL_MAIN = 'kwaipilot/kat-coder-pro:free';
-const MODEL_CODE = 'qwen/qwen3-coder';
+const MODEL_MAIN = 'anthropic/claude-3-haiku';
+const MODEL_CODE = 'anthropic/claude-3-haiku';
 const BUSINESS_MODEL = process.env.BUSINESS_MODEL || MODEL_MAIN;
 
 if (!OPENROUTER_API_KEY) {

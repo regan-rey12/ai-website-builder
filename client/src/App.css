@@ -1,0 +1,71 @@
+.App {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f172a;
+  color: #f8fafc;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.App-header {
+  text-align: center;
+  max-width: 28rem;
+  padding: 2rem;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  margin-bottom: 1rem;
+}
+
+h1 {
+  font-size: 1.75rem;
+  margin: 0 0 0.5rem;
+}
+
+.subtitle {
+  color: #94a3b8;
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+}
+
+.status {
+  text-align: left;
+  background: #1e293b;
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  margin: 0;
+}
+
+.status dt {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-top: 0.75rem;
+}
+
+.status dt:first-child {
+  margin-top: 0;
+}
+
+.status dd {
+  margin: 0.15rem 0 0;
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+}
+
+.status dd.ok {
+  color: #4ade80;
+}
+
+.status dd.warn {
+  color: #fbbf24;
+}
